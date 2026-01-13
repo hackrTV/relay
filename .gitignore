@@ -1,0 +1,25 @@
+# Binary
+relay
+
+# Test coverage
+*.out
+coverage.html
+
+# IDE/Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+
+# Debug
+debug
+__debug_bin*
