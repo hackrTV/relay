@@ -28,8 +28,8 @@ relay --twitch-channel=channelname
 # Watch YouTube Live chat only
 relay --youtube-video-id=VIDEO_ID --youtube-api-key=YOUR_API_KEY
 
-# Watch hackr.tv chat only
-relay --hackrtv-url=wss://hackr.tv/cable --hackrtv-channel=main
+# Watch hackr.tv chat only (requires HACKR_ADMIN_API_TOKEN env var)
+relay --hackrtv-url=wss://hackr.tv/cable
 
 # Watch all three simultaneously
 relay --twitch-channel=channelname \
@@ -49,7 +49,7 @@ relay --twitch-channel=channelname \
 | Flag | Default | Description |
 |---|---|---|
 | `--hackrtv-url` | *(required)* | ActionCable WebSocket URL |
-| `--hackrtv-channel` | `main` | Chat channel slug |
+| `--hackrtv-channel` | `live` | Chat channel slug |
 | `--hackrtv-token` | `HACKR_ADMIN_API_TOKEN` env | Admin API token |
 | `--hackrtv-alias` | `relay` | hackr alias for auth |
 
