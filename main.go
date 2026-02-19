@@ -22,7 +22,7 @@ func main() {
 	youtubeVideoID := flag.String("youtube-video-id", "", "YouTube video ID for live stream")
 	youtubeAPIKey := flag.String("youtube-api-key", "", "YouTube Data API key (or set YOUTUBE_API_KEY env)")
 	hackrtvURL := flag.String("hackrtv-url", "", "hackr.tv ActionCable WebSocket URL (e.g. wss://hackr.tv/cable)")
-	hackrtvChannel := flag.String("hackrtv-channel", "main", "hackr.tv chat channel slug")
+	hackrtvChannel := flag.String("hackrtv-channel", "live", "hackr.tv chat channel slug")
 	hackrtvToken := flag.String("hackrtv-token", "", "hackr.tv admin API token (or set HACKR_ADMIN_API_TOKEN env)")
 	hackrtvAlias := flag.String("hackrtv-alias", "relay", "hackr.tv hackr alias for auth")
 	flag.Parse()
