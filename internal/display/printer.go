@@ -11,6 +11,7 @@ import (
 type Printer struct {
 	twitchColor   *color.Color
 	youtubeColor  *color.Color
+	hackrtvColor  *color.Color
 	usernameColor *color.Color
 	dimColor      *color.Color
 }
@@ -19,6 +20,7 @@ func NewPrinter() *Printer {
 	return &Printer{
 		twitchColor:   color.New(color.FgMagenta, color.Bold),
 		youtubeColor:  color.New(color.FgRed, color.Bold),
+		hackrtvColor:  color.New(color.FgGreen, color.Bold),
 		usernameColor: color.New(color.FgCyan),
 		dimColor:      color.New(color.FgHiBlack),
 	}
@@ -31,9 +33,11 @@ func (p *Printer) Print(msg message.Message) {
 	var platformStr string
 	switch msg.Platform {
 	case message.Twitch:
-		platformStr = p.twitchColor.Sprint("[TW]")
+		platformStr = p.twitchColor.Sprint("[TTV]")
 	case message.YouTube:
-		platformStr = p.youtubeColor.Sprint("[YT]")
+		platformStr = p.youtubeColor.Sprint("[YT_]")
+	case message.HackrTV:
+		platformStr = p.hackrtvColor.Sprint("[HTV]")
 	}
 
 	timestamp := p.dimColor.Sprint(msg.Timestamp.Local().Format("15:04:05"))
