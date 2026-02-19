@@ -1,14 +1,15 @@
 # Relay
 
-A CLI tool for viewing Twitch and YouTube Live chat streams in a unified, color-coded display.
+A CLI tool for viewing Twitch, YouTube Live, and hackr.tv chat streams in a unified, color-coded display.
 
 ## Features
 
-- Real-time chat messages from Twitch and YouTube Live in a single view
-- Color-coded platform identifiers (purple for Twitch, red for YouTube)
+- Real-time chat messages from Twitch, YouTube Live, and hackr.tv in a single view
+- Color-coded platform identifiers (purple for Twitch, red for YouTube, green for hackr.tv)
 - Highlighted usernames for readability
 - Timestamps in local time
 - No Twitch credentials required (anonymous read-only access)
+- hackr.tv streams via ActionCable WebSocket with admin token auth
 
 ## Installation
 
@@ -27,20 +28,42 @@ relay --twitch-channel=channelname
 # Watch YouTube Live chat only
 relay --youtube-video-id=VIDEO_ID --youtube-api-key=YOUR_API_KEY
 
-# Watch both simultaneously
-relay --twitch-channel=channelname --youtube-video-id=VIDEO_ID --youtube-api-key=YOUR_API_KEY
+# Watch hackr.tv chat only
+relay --hackrtv-url=wss://hackr.tv/cable --hackrtv-channel=main
+
+# Watch all three simultaneously
+relay --twitch-channel=channelname \
+      --youtube-video-id=VIDEO_ID --youtube-api-key=YOUR_API_KEY \
+      --hackrtv-url=wss://hackr.tv/cable
 ```
 
-The YouTube API key can also be set via the `YOUTUBE_API_KEY` environment variable.
+### Environment Variables
+
+| Variable | Flag fallback | Description |
+|---|---|---|
+| `YOUTUBE_API_KEY` | `--youtube-api-key` | YouTube Data API key |
+| `HACKR_ADMIN_API_TOKEN` | `--hackrtv-token` | hackr.tv admin API token |
+
+### hackr.tv Flags
+
+| Flag | Default | Description |
+|---|---|---|
+| `--hackrtv-url` | *(required)* | ActionCable WebSocket URL |
+| `--hackrtv-channel` | `main` | Chat channel slug |
+| `--hackrtv-token` | `HACKR_ADMIN_API_TOKEN` env | Admin API token |
+| `--hackrtv-alias` | `relay` | hackr alias for auth |
 
 ## Output Format
 
 ```
-[TW] username • 14:32:05
+[TTV] username • 14:32:05
     Hello everyone!
 ────────────────────────────────
-[YT] username • 14:32:07
+[YT_] username • 14:32:07
     What's up chat
+────────────────────────────────
+[HTV] xeraen • 14:32:09
+    Welcome to the grid
 ────────────────────────────────
 ```
 
@@ -59,11 +82,16 @@ Relay uses a concurrent architecture with goroutines:
 ```
 ┌─────────────┐
 │ Twitch IRC  │──┐
-│  goroutine  │  │    ┌──────────────┐     ┌──────────┐
-└─────────────┘  ├───►│   messages   │────►│ Printer  │
-                 │    │   channel    │     │goroutine │
-┌─────────────┐  │    └──────────────┘     └──────────┘
-│ YouTube API │──┘
+│  goroutine  │  │
+└─────────────┘  │    ┌──────────────┐     ┌──────────┐
+                 ├───►│   messages   │────►│ Printer  │
+┌─────────────┐  │    │   channel    │     │goroutine │
+│ YouTube API │──┤    └──────────────┘     └──────────┘
+│  goroutine  │  │
+└─────────────┘  │
+                 │
+┌─────────────┐  │
+│ hackr.tv WS │──┘
 │  goroutine  │
 └─────────────┘
 ```
@@ -72,20 +100,29 @@ Relay uses a concurrent architecture with goroutines:
 
 - **YouTube Client**: Polls the YouTube Data API v3 liveChatMessages endpoint. Tracks page tokens to avoid duplicate messages and respects the API's suggested polling interval.
 
+- **hackr.tv Client**: Connects to hackr.tv via ActionCable WebSocket. Authenticates with an admin token, subscribes to a LiveChatChannel, receives initial packet history and live packets in real-time. Filters dropped (moderated) packets.
+
 - **Printer**: Reads from the unified message channel and outputs color-coded, formatted messages to stdout.
 
 ## Project Structure
 
 ```
 relay/
-├── main.go                     # Entry point, CLI flags, orchestration
+├── main.go                        # Entry point, CLI flags, orchestration
 ├── internal/
-│   ├── message/message.go      # Unified message struct and platform enum
-│   ├── twitch/client.go        # Twitch IRC client
-│   ├── youtube/client.go       # YouTube Live Chat API client
-│   └── display/printer.go      # Color-coded terminal output
+│   ├── message/message.go         # Unified message struct and platform enum
+│   ├── twitch/client.go           # Twitch IRC client
+│   ├── youtube/client.go          # YouTube Live Chat API client
+│   ├── hackrtv/client.go          # hackr.tv ActionCable WebSocket client
+│   └── display/printer.go         # Color-coded terminal output
 ├── go.mod
 └── go.sum
+```
+
+## Testing
+
+```bash
+go test ./...
 ```
 
 ## License
