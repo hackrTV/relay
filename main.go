@@ -10,6 +10,7 @@ import (
 	"syscall"
 
 	"relay/internal/display"
+	"relay/internal/hackrtv"
 	"relay/internal/message"
 	"relay/internal/twitch"
 	"relay/internal/youtube"
@@ -20,16 +21,23 @@ func main() {
 	twitchChannel := flag.String("twitch-channel", "", "Twitch channel name to watch")
 	youtubeVideoID := flag.String("youtube-video-id", "", "YouTube video ID for live stream")
 	youtubeAPIKey := flag.String("youtube-api-key", "", "YouTube Data API key (or set YOUTUBE_API_KEY env)")
+	hackrtvURL := flag.String("hackrtv-url", "", "hackr.tv ActionCable WebSocket URL (e.g. wss://hackr.tv/cable)")
+	hackrtvChannel := flag.String("hackrtv-channel", "main", "hackr.tv chat channel slug")
+	hackrtvToken := flag.String("hackrtv-token", "", "hackr.tv admin API token (or set HACKR_ADMIN_API_TOKEN env)")
+	hackrtvAlias := flag.String("hackrtv-alias", "relay", "hackr.tv hackr alias for auth")
 	flag.Parse()
 
-	// Check for YouTube API key in environment if not provided via flag
+	// Check for env fallbacks
 	if *youtubeAPIKey == "" {
 		*youtubeAPIKey = os.Getenv("YOUTUBE_API_KEY")
 	}
+	if *hackrtvToken == "" {
+		*hackrtvToken = os.Getenv("HACKR_ADMIN_API_TOKEN")
+	}
 
 	// Validate inputs
-	if *twitchChannel == "" && *youtubeVideoID == "" {
-		fmt.Fprintln(os.Stderr, "Error: At least one of --twitch-channel or --youtube-video-id is required")
+	if *twitchChannel == "" && *youtubeVideoID == "" && *hackrtvURL == "" {
+		fmt.Fprintln(os.Stderr, "Error: At least one platform is required (--twitch-channel, --youtube-video-id, or --hackrtv-url)")
 		flag.Usage()
 		os.Exit(1)
 	}
@@ -84,6 +92,19 @@ func main() {
 			fmt.Fprintf(os.Stderr, "Connecting to YouTube video: %s\n", *youtubeVideoID)
 			if err := client.Connect(ctx, messages); err != nil && ctx.Err() == nil {
 				fmt.Fprintf(os.Stderr, "YouTube error: %v\n", err)
+			}
+		}()
+	}
+
+	// Start hackr.tv client if configured
+	if *hackrtvURL != "" {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			client := hackrtv.NewClient(*hackrtvURL, *hackrtvToken, *hackrtvAlias, *hackrtvChannel)
+			fmt.Fprintf(os.Stderr, "Connecting to hackr.tv channel: %s\n", *hackrtvChannel)
+			if err := client.Connect(ctx, messages); err != nil && ctx.Err() == nil {
+				fmt.Fprintf(os.Stderr, "hackr.tv error: %v\n", err)
 			}
 		}()
 	}

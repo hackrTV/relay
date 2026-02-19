@@ -7,16 +7,19 @@ type Platform int
 const (
 	Twitch Platform = iota
 	YouTube
+	HackrTV
 )
 
 func (p Platform) String() string {
 	switch p {
 	case Twitch:
-		return "TW"
+		return "TTV"
 	case YouTube:
-		return "YT"
+		return "YT_"
+	case HackrTV:
+		return "HTV"
 	default:
-		return "??"
+		return "???"
 	}
 }
 
