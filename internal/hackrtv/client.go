@@ -76,7 +76,19 @@ func (c *Client) Connect(ctx context.Context, messages chan<- message.Message) e
 	}
 	u.RawQuery = q.Encode()
 
-	conn, _, err := websocket.DefaultDialer.DialContext(ctx, u.String(), nil)
+	// Set Origin header to match the server URL so ActionCable's
+	// request forgery protection accepts the connection.
+	origin := fmt.Sprintf("%s://%s", u.Scheme, u.Host)
+	if u.Scheme == "ws" {
+		origin = fmt.Sprintf("http://%s", u.Host)
+	} else if u.Scheme == "wss" {
+		origin = fmt.Sprintf("https://%s", u.Host)
+	}
+	headers := map[string][]string{
+		"Origin": {origin},
+	}
+
+	conn, _, err := websocket.DefaultDialer.DialContext(ctx, u.String(), headers)
 	if err != nil {
 		return fmt.Errorf("failed to connect to hackr.tv: %w", err)
 	}
