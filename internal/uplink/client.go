@@ -80,6 +80,7 @@ func FormatContent(msg message.Message) string {
 type sendPayload struct {
 	ChannelSlug string `json:"channel_slug"`
 	Content     string `json:"content"`
+	Source      string `json:"source,omitempty"`
 }
 
 // Send posts a single message to the Uplink API.
@@ -87,6 +88,7 @@ func (c *Client) Send(ctx context.Context, msg message.Message) error {
 	body, err := json.Marshal(sendPayload{
 		ChannelSlug: c.channel,
 		Content:     FormatContent(msg),
+		Source:      msg.Platform.String(),
 	})
 	if err != nil {
 		return err
