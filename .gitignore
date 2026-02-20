@@ -20,6 +20,9 @@ Thumbs.db
 .env
 .env.local
 
+# Config (may contain tokens)
+relay.toml
+
 # Debug
 debug
 __debug_bin*
