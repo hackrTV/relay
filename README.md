@@ -10,6 +10,7 @@ A CLI tool for viewing Twitch, YouTube Live, and hackr.tv chat streams in a unif
 - Timestamps in local time
 - No Twitch credentials required (anonymous read-only access)
 - hackr.tv streams via ActionCable WebSocket with per-hackr token auth
+- Bridge mode: forward Twitch/YouTube messages into hackr.tv live chat via the Admin Uplink API
 
 ## Installation
 
@@ -35,6 +36,13 @@ relay --hackrtv-url=wss://hackr.tv/cable
 relay --twitch-channel=channelname \
       --youtube-video-id=VIDEO_ID --youtube-api-key=YOUR_API_KEY \
       --hackrtv-url=wss://hackr.tv/cable
+
+# Bridge Twitch chat into hackr.tv (messages appear in the grid)
+relay --bridge \
+      --twitch-channel=channelname \
+      --hackrtv-url=wss://hackr.tv/cable \
+      --hackrtv-token=YOUR_TOKEN \
+      --hackrtv-alias=XERAEN
 ```
 
 ### Environment Variables
@@ -52,6 +60,7 @@ relay --twitch-channel=channelname \
 | `--hackrtv-channel` | `live` | Chat channel slug |
 | `--hackrtv-token` | `HACKRTV_API_TOKEN` env | API token (per-hackr) |
 | `--hackrtv-alias` | `relay` | hackr alias for auth |
+| `--bridge` | `false` | Forward Twitch/YouTube chat to hackr.tv via Uplink API |
 
 ## Output Format
 
@@ -83,15 +92,15 @@ Relay uses a concurrent architecture with goroutines:
 ┌─────────────┐
 │ Twitch IRC  │──┐
 │  goroutine  │  │
-└─────────────┘  │    ┌──────────────┐     ┌──────────┐
-                 ├───►│   messages   │────►│ Printer  │
-┌─────────────┐  │    │   channel    │     │goroutine │
-│ YouTube API │──┤    └──────────────┘     └──────────┘
-│  goroutine  │  │
-└─────────────┘  │
-                 │
-┌─────────────┐  │
-│ hackr.tv WS │──┘
+└─────────────┘  │    ┌──────────────┐     ┌───────────┐
+                 ├───►│   messages   │──┬─►│ Printer   │
+┌─────────────┐  │    │   channel    │  │  │ goroutine │
+│ YouTube API │──┤    └──────────────┘  │  └───────────┘
+│  goroutine  │  │                      │
+└─────────────┘  │                      │  ┌───────────┐
+                 │       (--bridge)     └─►│ Uplink    │
+┌─────────────┐  │       TTV/YT only       │ goroutine │
+│ hackr.tv WS │──┘                         └───────────┘
 │  goroutine  │
 └─────────────┘
 ```
@@ -101,6 +110,8 @@ Relay uses a concurrent architecture with goroutines:
 - **YouTube Client**: Polls the YouTube Data API v3 liveChatMessages endpoint. Tracks page tokens to avoid duplicate messages and respects the API's suggested polling interval.
 
 - **hackr.tv Client**: Connects to hackr.tv via ActionCable WebSocket. Authenticates with an admin token, subscribes to a LiveChatChannel, receives initial packet history and live packets in real-time. Filters dropped (moderated) packets.
+
+- **Uplink Client** (`--bridge`): POSTs Twitch/YouTube messages to hackr.tv's Admin Uplink API as `[TTV] user: message` or `[YT_] user: message`. hackr.tv messages are excluded to prevent echo loops, and echoed bridge messages from the relay alias are suppressed in the local display. Backs off on 429 rate limits.
 
 - **Printer**: Reads from the unified message channel and outputs color-coded, formatted messages to stdout.
 
@@ -114,6 +125,7 @@ relay/
 │   ├── twitch/client.go           # Twitch IRC client
 │   ├── youtube/client.go          # YouTube Live Chat API client
 │   ├── hackrtv/client.go          # hackr.tv ActionCable WebSocket client
+│   ├── uplink/client.go           # hackr.tv Admin Uplink API client (bridge mode)
 │   └── display/printer.go         # Color-coded terminal output
 ├── go.mod
 └── go.sum
