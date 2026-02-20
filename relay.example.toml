@@ -1,0 +1,19 @@
+# relay.example.toml
+# Copy to relay.toml and fill in your values.
+# CLI flags and env vars override values set here.
+
+# Enable bridge mode to forward Twitch/YouTube chat to hackr.tv
+# bridge = true
+
+[twitch]
+# channel = "xqc"
+
+[youtube]
+# video_id = "dQw4w9WgXcQ"
+# api_key = "YOUR_YOUTUBE_API_KEY"    # or set YOUTUBE_API_KEY env
+
+[hackrtv]
+# url = "wss://hackr.tv/cable"
+# channel = "live"                     # default: "live"
+# token = "YOUR_HACKRTV_TOKEN"        # or set HACKRTV_API_TOKEN env
+# alias = "relay"                     # default: "relay"

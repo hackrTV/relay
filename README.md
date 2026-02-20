@@ -45,6 +45,27 @@ relay --bridge \
       --hackrtv-alias=XERAEN
 ```
 
+### Config File
+
+Instead of passing many flags, you can use a TOML config file:
+
+```bash
+cp relay.example.toml relay.toml
+# Edit relay.toml with your values
+relay --config relay.toml
+```
+
+CLI flags override config file values, and env vars fill in anything not set by either:
+
+**CLI flag > env var > config file > default**
+
+```bash
+# Config file provides base settings, flag overrides one value
+relay --config relay.toml --twitch-channel=other
+```
+
+See `relay.example.toml` for all available fields.
+
 ### Environment Variables
 
 | Variable | Flag fallback | Description |
@@ -120,7 +141,9 @@ Relay uses a concurrent architecture with goroutines:
 ```
 relay/
 ├── main.go                        # Entry point, CLI flags, orchestration
+├── relay.example.toml             # Example config file
 ├── internal/
+│   ├── config/config.go           # TOML config loading and defaults
 │   ├── message/message.go         # Unified message struct and platform enum
 │   ├── twitch/client.go           # Twitch IRC client
 │   ├── youtube/client.go          # YouTube Live Chat API client
