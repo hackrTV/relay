@@ -132,7 +132,7 @@ Relay uses a concurrent architecture with goroutines:
 
 - **hackr.tv Client**: Connects to hackr.tv via ActionCable WebSocket. Authenticates with an admin token, subscribes to a LiveChatChannel, receives initial packet history and live packets in real-time. Filters dropped (moderated) packets.
 
-- **Uplink Client** (`--bridge`): POSTs Twitch/YouTube messages to hackr.tv's Admin Uplink API as `[TTV] user: message` or `[YT_] user: message`. hackr.tv messages are excluded to prevent echo loops, and echoed bridge messages from the relay alias are suppressed in the local display. Backs off on 429 rate limits.
+- **Uplink Client** (`--bridge`): POSTs Twitch/YouTube messages to hackr.tv's Admin Uplink API as `[TTV] user: message` or `[YT_] user: message`. Includes a `source` field (e.g. `"TTV"`, `"YT_"`) so hackr.tv can visually distinguish bridged messages from native Uplink chat. hackr.tv messages are excluded to prevent echo loops, and echoed bridge messages from the relay alias are suppressed in the local display. Backs off on 429 rate limits.
 
 - **Printer**: Reads from the unified message channel and outputs color-coded, formatted messages to stdout.
 
