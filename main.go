@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 
@@ -13,6 +14,7 @@ import (
 	"relay/internal/hackrtv"
 	"relay/internal/message"
 	"relay/internal/twitch"
+	"relay/internal/uplink"
 	"relay/internal/youtube"
 )
 
@@ -25,6 +27,7 @@ func main() {
 	hackrtvChannel := flag.String("hackrtv-channel", "live", "hackr.tv chat channel slug")
 	hackrtvToken := flag.String("hackrtv-token", "", "hackr.tv admin API token (or set HACKRTV_API_TOKEN env)")
 	hackrtvAlias := flag.String("hackrtv-alias", "relay", "hackr.tv hackr alias for auth")
+	bridge := flag.Bool("bridge", false, "Bridge Twitch/YouTube chat to hackr.tv via Uplink API")
 	flag.Parse()
 
 	// Check for env fallbacks
@@ -47,6 +50,11 @@ func main() {
 		os.Exit(1)
 	}
 
+	if *bridge && (*hackrtvURL == "" || *hackrtvToken == "") {
+		fmt.Fprintln(os.Stderr, "Error: --bridge requires --hackrtv-url and --hackrtv-token")
+		os.Exit(1)
+	}
+
 	// Setup context for graceful shutdown
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -63,9 +71,49 @@ func main() {
 	// Create unified message channel
 	messages := make(chan message.Message, 100)
 
+	// Fan-out: printer always receives; uplink receives non-HTV when bridging
+	printerCh := make(chan message.Message, 100)
+	var uplinkCh chan message.Message
+
+	if *bridge {
+		uplinkCh = make(chan message.Message, 100)
+	}
+
+	go func() {
+		for msg := range messages {
+			// In bridge mode, suppress HTV echoes of our own bridged messages
+			if uplinkCh != nil && isBridgeEcho(msg, *hackrtvAlias) {
+				continue
+			}
+			printerCh <- msg
+			if uplinkCh != nil && msg.Platform != message.HackrTV {
+				select {
+				case uplinkCh <- msg:
+				default:
+					// drop if uplink can't keep up — don't block printer
+				}
+			}
+		}
+		close(printerCh)
+		if uplinkCh != nil {
+			close(uplinkCh)
+		}
+	}()
+
 	// Start printer goroutine
 	printer := display.NewPrinter()
-	go printer.Run(messages)
+	go printer.Run(printerCh)
+
+	// Start uplink bridge if enabled
+	if *bridge {
+		uplinkClient, err := uplink.NewClient(*hackrtvURL, *hackrtvToken, *hackrtvAlias, *hackrtvChannel)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Uplink client error: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Fprintln(os.Stderr, "Bridge mode enabled — forwarding Twitch/YouTube chat to hackr.tv")
+		go uplinkClient.Run(ctx, uplinkCh)
+	}
 
 	// Track active connections
 	var wg sync.WaitGroup
@@ -112,4 +160,12 @@ func main() {
 	// Wait for all clients to finish
 	wg.Wait()
 	close(messages)
+}
+
+// isBridgeEcho returns true if an HTV message is an echo of a bridged
+// Twitch/YouTube message sent by our own relay alias.
+func isBridgeEcho(msg message.Message, relayAlias string) bool {
+	return msg.Platform == message.HackrTV &&
+		strings.EqualFold(msg.Username, relayAlias) &&
+		(strings.HasPrefix(msg.Content, "[TTV] ") || strings.HasPrefix(msg.Content, "[YT_] "))
 }
