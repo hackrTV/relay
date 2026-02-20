@@ -23,7 +23,7 @@ func main() {
 	youtubeAPIKey := flag.String("youtube-api-key", "", "YouTube Data API key (or set YOUTUBE_API_KEY env)")
 	hackrtvURL := flag.String("hackrtv-url", "", "hackr.tv ActionCable WebSocket URL (e.g. wss://hackr.tv/cable)")
 	hackrtvChannel := flag.String("hackrtv-channel", "live", "hackr.tv chat channel slug")
-	hackrtvToken := flag.String("hackrtv-token", "", "hackr.tv admin API token (or set HACKR_ADMIN_API_TOKEN env)")
+	hackrtvToken := flag.String("hackrtv-token", "", "hackr.tv admin API token (or set HACKRTV_API_TOKEN env)")
 	hackrtvAlias := flag.String("hackrtv-alias", "relay", "hackr.tv hackr alias for auth")
 	flag.Parse()
 
@@ -32,7 +32,7 @@ func main() {
 		*youtubeAPIKey = os.Getenv("YOUTUBE_API_KEY")
 	}
 	if *hackrtvToken == "" {
-		*hackrtvToken = os.Getenv("HACKR_ADMIN_API_TOKEN")
+		*hackrtvToken = os.Getenv("HACKRTV_API_TOKEN")
 	}
 
 	// Validate inputs
