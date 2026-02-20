@@ -37,7 +37,7 @@ relay --twitch-channel=channelname \
       --youtube-video-id=VIDEO_ID --youtube-api-key=YOUR_API_KEY \
       --hackrtv-url=wss://hackr.tv/cable
 
-# Bridge Twitch chat into hackr.tv (messages appear in the grid)
+# Bridge Twitch chat into hackr.tv (messages appear in the Uplink)
 relay --bridge \
       --twitch-channel=channelname \
       --hackrtv-url=wss://hackr.tv/cable \
