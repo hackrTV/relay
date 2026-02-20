@@ -9,7 +9,7 @@ A CLI tool for viewing Twitch, YouTube Live, and hackr.tv chat streams in a unif
 - Highlighted usernames for readability
 - Timestamps in local time
 - No Twitch credentials required (anonymous read-only access)
-- hackr.tv streams via ActionCable WebSocket with admin token auth
+- hackr.tv streams via ActionCable WebSocket with per-hackr token auth
 
 ## Installation
 
@@ -28,7 +28,7 @@ relay --twitch-channel=channelname
 # Watch YouTube Live chat only
 relay --youtube-video-id=VIDEO_ID --youtube-api-key=YOUR_API_KEY
 
-# Watch hackr.tv chat only (requires HACKR_ADMIN_API_TOKEN env var)
+# Watch hackr.tv chat only (requires HACKRTV_API_TOKEN env var)
 relay --hackrtv-url=wss://hackr.tv/cable
 
 # Watch all three simultaneously
@@ -42,7 +42,7 @@ relay --twitch-channel=channelname \
 | Variable | Flag fallback | Description |
 |---|---|---|
 | `YOUTUBE_API_KEY` | `--youtube-api-key` | YouTube Data API key |
-| `HACKR_ADMIN_API_TOKEN` | `--hackrtv-token` | hackr.tv admin API token |
+| `HACKRTV_API_TOKEN` | `--hackrtv-token` | hackr.tv API token (per-hackr) |
 
 ### hackr.tv Flags
 
@@ -50,7 +50,7 @@ relay --twitch-channel=channelname \
 |---|---|---|
 | `--hackrtv-url` | *(required)* | ActionCable WebSocket URL |
 | `--hackrtv-channel` | `live` | Chat channel slug |
-| `--hackrtv-token` | `HACKR_ADMIN_API_TOKEN` env | Admin API token |
+| `--hackrtv-token` | `HACKRTV_API_TOKEN` env | API token (per-hackr) |
 | `--hackrtv-alias` | `relay` | hackr alias for auth |
 
 ## Output Format
