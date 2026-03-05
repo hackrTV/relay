@@ -26,3 +26,4 @@ relay.toml
 # Debug
 debug
 __debug_bin*
+.claude
